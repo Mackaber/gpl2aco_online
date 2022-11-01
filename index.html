@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>GPL2ACO Online</title>
+  <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  <style>
+    body {
+      font-family: MONOSPACE;
+    }
+
+    .button {
+      background-color: #8c4caf;
+      border: none;
+      color: white;
+      padding: 5px 22px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>GPL2ACO Online</h1>
+  <h2>Based on <a href="https://gist.github.com/mieki256/b230c5dc678ed3363f15b7ed7a38c935">gpl2aco.py</a> By <a href="https://gist.github.com/mieki256">mieki256</a></h2>
+  <h2>Made using <a href="https://pyscript.net/">pyscript</a></h2>
+  <h2>With <a href="https://www.jhanley.com/blog/pyscript-files-and-file-systems-part-2/">help</a> from <a href="https://www.jhanley.com/">John Hanley</a></h2>
+  <button class="button" type="button" id="file_select" style="display:none;">Upload .gpl</button><br />
+  <a id="download" href="" style="display:none;">Download</a>
+  <div id="output"></div>
+  <br />
+  <py-config type="toml">
+    paths = ["./gpl2aco.py"]
+  </py-config>
+  <py-script output="output">
+    import warnings
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+
+    import asyncio
+    import sys
+    from js import alert, document, Object, window, URL
+    from pyodide import create_proxy, to_js
+    from gpl2aco import load_and_parse_gpl, create_aco
+
+    async def file_select(event):
+      try:
+        options = {
+          "multiple": False,
+          "startIn": "documents"
+        }
+
+        fileHandles = await window.showOpenFilePicker(Object.fromEntries(to_js(options)))
+
+        for fileHandle in fileHandles:
+          file = await fileHandle.getFile()
+
+          download = document.getElementById("download")
+
+          content = await file.text()
+          # Convert the file
+          name, columns, colors = load_and_parse_gpl(content)
+
+          nonull = False
+
+          # create aco binary ver1 and ver2
+          aco_bin = create_aco(1, nonull, colors)
+          aco_bin += create_aco(2, nonull, colors)
+          download.setAttribute('style', 'display: block;') 
+          download.setAttribute('download',f'{file.name[0:-4]}.aco')
+          download.setAttribute('target', '_blank')
+          download.setAttribute('href', URL.createObjectURL(aco_bin));
+          
+      except Exception as e:
+        console.log('Exception: ' + str(e))
+        return
+
+    def setup_button():
+      # Create a Python proxy for the callback function
+      file_select_proxy = create_proxy(file_select)
+
+      # Set the listener to the callback
+      document.getElementById("file_select").addEventListener("click", file_select_proxy, False)
+      document.getElementById("file_select").style = "display: block;"
+
+    
+    setup_button()
+  </py-script>
+</body>
+
+</html>
