@@ -43,7 +43,7 @@
 
     import asyncio
     import sys
-    from js import alert, document, Object, window, URL
+    from js import alert, document, Object, window, URL, Blob
     from pyodide import create_proxy, to_js
     from gpl2aco import load_and_parse_gpl, create_aco
 
@@ -70,10 +70,16 @@
           # create aco binary ver1 and ver2
           aco_bin = create_aco(1, nonull, colors)
           aco_bin += create_aco(2, nonull, colors)
+
+
+          binaryData = []
+          binaryData.append(aco_bin.decode("utf-8") )
+          obj_url = URL.createObjectURL(Blob.new(binaryData))
+
           download.setAttribute('style', 'display: block;') 
           download.setAttribute('download',f'{file.name[0:-4]}.aco')
           download.setAttribute('target', '_blank')
-          download.setAttribute('href', URL.createObjectURL(aco_bin));
+          download.setAttribute('href', obj_url);
           
       except Exception as e:
         console.log('Exception: ' + str(e))
